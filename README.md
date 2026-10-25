@@ -1,252 +1,220 @@
 # WindProcure UK: Day-Ahead Wind Generation Forecasting & Power Procurement Platform
 
-An enterprise decision-support platform designed for **UK energy utility trading desks** procuring electricity from the wholesale **Day-Ahead Market** (EPEX SPOT / Nord Pool). 
-
-The platform integrates directly with **Elexon BMRS Insights Solution** streaming datasets (`FUELHH` outturn actuals and `WINDFOR` forecast runs) to provide:
-1. **Decision-Time Forecast Visibility:** Reconstructs the exact wind forecasts available when traders commit day-ahead auction bids (e.g., $D-1$ at 11:00 UTC), eliminating hindsight bias.
-2. **Quantified Error & Risk Analytics:** Measures Mean Absolute Error (MAE), Root Mean Square Error (RMSE), systematic forecast bias, percentiles ($P_{10}$, $P_{50}$, $P_{90}$), and lead-time horizon degradation across **January 2026**.
-3. **100% Settlement Coverage:** Full reconciliation of all **1,488 half-hour settlement periods** across the 31 days of January 2026, matched against **19,272 forecast records** across **264 publication runs**.
-
----
-
-## Table of Contents
-1. [Client Pitch (Energy Utility Trading Desk)](#1-client-pitch-uk-energy-utility-day-ahead-trading-desk)
-2. [Technical Lead Architecture Review](#2-technical-lead-architecture-review)
-3. [Domain & Data Alignment Methodology](#3-domain--data-alignment-methodology)
-4. [Statistical Accuracy Formulation](#4-statistical-accuracy-formulation)
-5. [January 2026 Key Empirical Findings](#5-january-2026-key-empirical-findings)
-6. [Technology Stack](#6-technology-stack)
-7. [Local Quickstart & Docker](#7-local-quickstart--docker)
-8. [Cloud Deployment (Vercel & Heroku)](#8-cloud-deployment-vercel--heroku)
-9. [Automated Pytest Suite](#9-automated-pytest-suite)
-10. [AI Tools Transparency Declaration](#10-ai-tools-transparency-declaration)
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Deployed-black?logo=vercel)](https://kjhw.vercel.app)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?logo=fastapi&logoColor=white)](http://localhost:8000/docs)
+[![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](http://localhost:3000)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](#method-1-one-click-docker-recommended)
+[![Tests Passing](https://img.shields.io/badge/Tests-13%20Passed-brightgreen)](#how-to-run-automated-tests)
 
 ---
 
-## 1. Client Pitch (UK Energy Utility Day-Ahead Trading Desk)
+## 🔗 Live Application Links & Repository
 
-### The Executive Context
-In the UK wholesale power market, utilities must procure sufficient power to serve their retail customer demand profile. Electricity cannot be stored cost-effectively at utility scale. Therefore, power purchase decisions for delivery day $D$ must be submitted in day-ahead auctions on day $D-1$ prior to gate closure (typically **11:00 UTC** on EPEX SPOT UK or **12:00 UTC** on Nord Pool).
-
-To cover consumer demand net of renewable generation, utilities procure dispatchable thermal/peaker power or interconnector flows:
-
-$$\text{Thermal Procured} = \text{Consumer Demand} - \text{Renewable (Wind) Generation}$$
-
-Because wind generation is weather-dependent and volatile:
-* **Over-Forecasting Wind:** The utility contracts too little thermal power in the Day-Ahead auction. During delivery, outturn wind falls short, leaving the utility short of power. The unhedged deficit must be bought in the Balancing Mechanism (BM) at volatile, often punitive system buy prices (cashout price).
-* **Under-Forecasting Wind:** The utility contracts too much thermal power at high day-ahead prices, ending up long during delivery and selling back surplus generation at discounted system sell prices.
-
-### How WindProcure Solves This
-* **Zero Hindsight Bias:** BMRS publishes wind forecasts multiple times daily. Looking at the "latest" forecast gives a misleading impression of forecast accuracy because that forecast was published *after* auction gate closure. WindProcure strictly isolates the **Decision-Time Forecast** available at the trader's chosen auction cut-off.
-* **Quantified Reserve Margins:** Instead of guessing weather buffers, traders can use quantitative metrics ($P_{10}$ to $P_{90}$ spreads and bias) to price exact insurance buffers into their bids.
-* **Lead-Time Horizon Intelligence:** Clearly demonstrates how forecast error evolves from 48h out down to intraday, allowing trading desks to optimize how much power to hedge in the Day-Ahead auction vs. how much to leave for intraday continuous trading.
+* **Live Web Application (Vercel):** [https://kjhw.vercel.app](https://kjhw.vercel.app) *(or your Vercel deployment link)*
+* **GitHub Repository:** [https://github.com/Namanag17/kjhw](https://github.com/Namanag17/kjhw)
+* **Backend API Documentation (Interactive Swagger):** `http://localhost:8000/docs` or `https://kjhw.vercel.app/api/docs`
 
 ---
 
-## 2. Technical Lead Architecture Review
+## 💡 Project Overview (In Simple & Plain English)
 
-### System Architecture Overview
-The system follows a decoupled, resilient architecture:
+### What problem does this application solve?
+Imagine you run an electricity utility in the United Kingdom that supplies electricity to thousands of homes and businesses. 
+1. **You must buy electricity in advance:** In the UK wholesale market, you cannot wait until the minute people turn on their lights. You must commit and buy power in the **Day-Ahead Market** one day before delivery (usually before 11:00 AM on day $D-1$).
+2. **Wind power is clean, but weather is unpredictable:** You want to rely on renewable wind energy as much as possible because it is green and cheap. Whatever wind doesn't generate, you have to buy from backup thermal (gas/coal) plants:
+   $$\text{Gas/Thermal Power to Buy} = \text{Consumer Demand} - \text{Wind Generation}$$
+3. **The Risk of Wrong Forecasts:**
+   * **If the forecast overestimates the wind:** You buy too little gas power. On the delivery day, the wind does not blow as expected. You are left short of electricity! The National Grid then charges you punitive, expensive emergency penalty fees (called the *imbalance cashout price*).
+   * **If the forecast underestimates the wind:** You bought too much expensive gas power. You now have excess electricity that you must dump on the market at a big loss.
 
+### What does this software do?
+**WindProcure UK** is a specialized decision-making workstation built for energy procurement traders.
+* It connects directly to the official UK electricity data stream (**Elexon BMRS**).
+* It pulls **actual wind generation (`FUELHH`)** and **wind forecasts (`WINDFOR`)** for **January 2026**.
+* It shows the trader the **exact forecast that was available at 11:00 AM yesterday** (the decision cut-off), preventing "hindsight bias" from looking at newer forecasts published after the auction closed.
+* It quantitatively calculates the forecast error (**MAE**, **RMSE**, and **Systematic Bias**) so traders can bid with safety margins and avoid millions in penalty cashout fees.
+
+---
+
+## 📁 Details of Files and Directories Present
+
+Here is the complete layout of the project and the purpose of every file:
+
+```text
+d:\WINDFOR/
+│
+├── backend/                                # Python FastAPI Backend
+│   ├── app/                                # Application Source Code
+│   │   ├── __init__.py                     # Python package initializer
+│   │   ├── config.py                       # Settings: Elexon API URLs, Jan 2026 bounds, default cutoffs
+│   │   ├── elexon_client.py                # Ingestion client: fetches FUELHH & WINDFOR streams in chunks
+│   │   ├── data_store.py                   # Database manager: SQLite tables, indexes, and queries
+│   │   ├── data_processor.py               # Cleaning: filters WIND, parses UTC dates, checks 1,488 SP gaps
+│   │   ├── forecast_service.py             # Core logic: selects forecast available at decision cutoff
+│   │   ├── metrics_service.py              # Math engine: calculates MAE, RMSE, Bias, MAPE, quantiles
+│   │   ├── schemas.py                      # Pydantic data models for typed API requests and responses
+│   │   └── main.py                         # FastAPI REST app with CORS and public endpoints
+│   ├── data/
+│   │   └── windfor.db                      # Persisted SQLite database with all Jan 2026 records
+│   ├── tests/                              # Automated Pytest Test Suite
+│   │   ├── test_data_processor.py          # Tests data cleaning, deduplication, and interval gap audit
+│   │   ├── test_forecast_service.py        # Tests decision cutoff rules and forecast selection
+│   │   ├── test_metrics.py                 # Tests MAE, RMSE, and Bias math against ground truth
+│   │   └── test_api.py                     # Tests FastAPI HTTP endpoints and schemas
+│   ├── sync_data.py                        # Standalone script to fetch and verify live Elexon data
+│   ├── requirements.txt                    # Python dependencies (FastAPI, Pandas, HTTPX, Pytest)
+│   ├── Dockerfile                          # Production container image for Python backend
+│   ├── Procfile                            # Heroku deployment command (uvicorn app.main:app)
+│   └── runtime.txt                         # Specifies Python 3.12.3 for cloud hosts
+│
+├── frontend/                               # React 19 + Vite Frontend SPA
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Header.jsx                  # Top bar with live coverage badges and modal triggers
+│   │   │   ├── Controls.jsx                # Market presets (EPEX, Nord Pool), date and grid controls
+│   │   │   ├── KpiCards.jsx                # Key trading metrics cards (MAE, Bias, RMSE, P10-P90)
+│   │   │   ├── ForecastChart.jsx           # Recharts time-series: Actual vs. Forecast with zoom brush
+│   │   │   ├── VersionInspector.jsx        # Traces all 20+ historical forecast runs for any half-hour
+│   │   │   ├── PeriodAnalysis.jsx          # Diurnal curve across Settlement Periods 1 to 48
+│   │   │   ├── DailyBreakdown.jsx          # Day-by-day accuracy and generation ledger for Jan 2026
+│   │   │   ├── HorizonChart.jsx            # Lead-time degradation chart (0h to 72h lead time)
+│   │   │   ├── DataAuditModal.jsx          # Modal report verifying 1,488 intervals & zero gaps
+│   │   │   └── ClientPitchModal.jsx        # Built-in Client Pitch & Technical Architecture Review
+│   │   ├── api.js                          # Fetch client communicating with the backend API
+│   │   ├── App.jsx                         # Main dashboard state management and layout tabs
+│   │   ├── main.jsx                        # React root entrypoint
+│   │   └── index.css                       # Tailwind CSS styling and dark theme tokens
+│   ├── package.json                        # Frontend packages (React 19, Recharts, Tailwind, Lucide)
+│   ├── vite.config.js                      # Vite build configuration with Tailwind plugin & proxy
+│   ├── nginx.conf                          # Nginx reverse proxy configuration for production Docker
+│   ├── Dockerfile                          # Multi-stage Docker container (Node build + Nginx serve)
+│   └── vercel.json                         # Frontend-specific Vercel routing rules
+│
+├── docker-compose.yml                      # Single-command multi-container Docker setup
+├── vercel.json                             # Root Vercel multi-service configuration (frontend + backend)
+├── pytest.ini                              # Pytest pythonpath configuration
+├── .gitignore                              # Git ignore rules for node_modules, logs, and venv
+└── README.md                               # Project documentation, guides, and pitch
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                   React 19 + Vite Frontend                  │
-│   (Tailwind CSS • Recharts • Lucide • Dynamic Presets)      │
-└──────────────────────────────▲──────────────────────────────┘
-                               │ JSON REST API
-┌──────────────────────────────▼──────────────────────────────┐
-│                    FastAPI Backend (Python)                 │
-│  ┌───────────────────────┐       ┌───────────────────────┐  │
-│  │   forecast_service    │       │    metrics_service    │  │
-│  │ (Cutoff / Lead Time)  │       │ (MAE, RMSE, Bias, SP) │  │
-│  └───────────▲───────────┘       └───────────▲───────────┘  │
-│              │                               │              │
-│  ┌───────────▼───────────┐       ┌───────────▼───────────┐  │
-│  │    data_processor     │       │      data_store       │  │
-│  │ (Cleaning, Gap Audit) │       │ (SQLite / PostgreSQL) │  │
-│  └───────────▲───────────┘       └───────────────────────┘  │
-│              │                                              │
-│  ┌───────────▼───────────┐                                  │
-│  │     elexon_client     │                                  │
-│  │ (Chunked HTTP Stream) │                                  │
-│  └───────────▲───────────┘                                  │
-└──────────────┼──────────────────────────────────────────────┘
-               │ HTTPS (Chunked UTC Streams)
-┌──────────────▼──────────────────────────────────────────────┐
-│              Elexon BMRS Insights Solution                  │
-│       • FUELHH Stream (WIND Outturns, 30-min SP)            │
-│       • WINDFOR Stream (Forecast Runs, 60-min Grid)         │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Key Architectural Highlights
-1. **Streaming Data Ingestion (`app/elexon_client.py`):**
-   * Connects to `/datasets/FUELHH/stream` and `/datasets/WINDFOR/stream`.
-   * Queries in 5-day chunks with automated retry backoffs to prevent connection timeouts and memory spikes.
-   * Caches raw data locally in SQLite (`data/windfor.db`) for sub-millisecond query performance.
-2. **Standardization & Interval Audit (`app/data_processor.py`):**
-   * Converts all timestamps to UTC ISO-8601 (`YYYY-MM-DDTHH:MM:SSZ`).
-   * Validates generation values as non-negative floats, flags corrupted records, and deduplicates.
-   * Executes a strict completeness check across the full January 2026 timeline:
-     $$\text{Expected Intervals} = 31\text{ days} \times 48\text{ half-hours} = 1,488\text{ intervals}$$
-     **Verification Result:** Exactly **1,488 out of 1,488** intervals found (100.0% coverage, 0 missing).
-3. **Core Selection Logic (`app/forecast_service.py`):**
-   * For every delivery period $t$ on day $D$:
-     $$\text{Cutoff}(D) = (D - 1\text{ day}) \text{ at } \text{cutoff\_time (e.g. 11:00 UTC)}$$
-     $$\text{Decision Forecast}(t) = \max_{\text{publish\_time} \le \text{Cutoff}(D)} \text{WINDFOR}(t)$$
-   * Separately tracks the **Latest Benchmark Forecast** ($\max_{\text{publish\_time} \le t}$) and earlier multi-version runs.
 
 ---
 
-## 3. Domain & Data Alignment Methodology
+## 🚀 How to Start the Application
 
-### The 30-Minute vs. 60-Minute Resolution Alignment
-An important nuance discovered during API exploration:
-* **FUELHH (Actuals):** Recorded every **30 minutes** (minutes `:00` and `:30`), corresponding to UK Settlement Periods 1 to 48.
-* **WINDFOR (Forecasts):** Issued on an **hourly grid** (minutes `:00`, e.g., 00:00, 01:00, 02:00...) published multiple times daily (e.g., 02:30, 04:30, 07:30, 09:30, 11:30, 15:30, 18:30, 22:30 UTC).
+You can start and run the project using **any of the three methods below**:
 
-WindProcure natively supports two user-configurable alignment modes:
-1. **Hourly Exact (Default):** Matches forecasts on exact `:00` timestamps against corresponding `:00` actuals (744 points in January).
-2. **Half-Hourly Mapped:** Maps each hourly forecast to both settlement periods of that hour (`:00` and `:30`), providing full evaluation across all 1,488 settlement periods.
+### Method 1: One-Click Docker (Recommended)
+If you have Docker Desktop installed, this starts both the backend and frontend with a single command:
 
----
-
-## 4. Statistical Accuracy Formulation
-
-For delivery intervals $i = 1, \dots, N$:
-
-1. **Forecast Error:**
-   $$e_i = \hat{y}_i - y_i \quad (\text{Forecast} - \text{Actual})$$
-   * $e_i > 0$: **Over-forecast** (wind shortfall / utility short)
-   * $e_i < 0$: **Under-forecast** (wind surplus / utility long)
-
-2. **Mean Absolute Error (MAE):**
-   $$\text{MAE} = \frac{1}{N} \sum_{i=1}^N |e_i|$$
-
-3. **Root Mean Square Error (RMSE):**
-   $$\text{RMSE} = \sqrt{\frac{1}{N} \sum_{i=1}^N e_i^2}$$
-
-4. **Mean Error / Bias:**
-   $$\text{Bias} = \frac{1}{N} \sum_{i=1}^N e_i$$
-
-5. **Mean Absolute Percentage Error (MAPE):**
-   $$\text{MAPE} = \frac{1}{M} \sum_{i=1}^M \frac{|e_i|}{y_i} \times 100\% \quad (y_i > 10\text{ MW})$$
-
-6. **Error Percentiles:** $P_{10}$, $P_{50}$ (Median), and $P_{90}$ defining the 80% operational confidence interval.
-
----
-
-## 5. January 2026 Key Empirical Findings
-
-Evaluating National Grid ESO / Elexon data for **January 2026** (Standard Day-Ahead Cutoff: $D-1$ 11:00 UTC):
-
-| Metric | Day-Ahead Decision Forecast ($D-1$ 11:00 UTC) | Latest Real-Time Benchmark | Delta / Trader Impact |
-| :--- | :---: | :---: | :---: |
-| **Sample Evaluated** | 744 hourly delivery periods | 744 hourly delivery periods | Complete January 2026 coverage |
-| **MAE (Mean Absolute Error)** | **2,107.18 MW** | **1,794.22 MW** | **-312.96 MW (-14.8%)** error reduction as delivery approaches |
-| **RMSE** | **2,611.24 MW** | **2,280.90 MW** | Outlier sensitivity decreases near delivery |
-| **Forecast Bias (Mean Error)** | **+1,839.92 MW** | **+1,592.49 MW** | **Systematic Over-Forecasting** across the month |
-| **MAPE** | **21.88%** | **16.34%** | Normalized percentage error |
-| **Correlation ($r$)** | **0.9287** | **0.9540** | High directional correlation with actuals |
-| **$P_{10}$ / $P_{50}$ / $P_{90}$ Error** | **-502.7 MW / +1,661 MW / +4,377 MW** | -289.3 MW / +1,328 MW / +3,763 MW | 80% of Day-Ahead errors had positive wind deficit |
-
-### Lead-Time Error Horizon Degradation
-Evaluating all 19,272 forecast records across lead-time horizon buckets:
-* **0h – 6h ahead (Intraday Gate Closure):** MAE = 1,767.72 MW | RMSE = 2,249.21 MW
-* **6h – 12h ahead:** MAE = 1,833.73 MW | RMSE = 2,304.38 MW
-* **12h – 24h ahead:** MAE = 1,990.88 MW | RMSE = 2,474.17 MW
-* **24h – 36h ahead (Standard Day-Ahead Auction):** MAE = **2,122.56 MW** | RMSE = **2,586.87 MW**
-* **36h – 48h ahead:** MAE = 2,337.01 MW | RMSE = 2,866.21 MW
-* **48h – 72h ahead:** MAE = 2,371.92 MW | RMSE = 2,977.90 MW
-
-> **Trader Takeaway:** The quantitative price of Day-Ahead auction commitment vs. Intraday flexibility is **~354 MW of MAE**. Furthermore, the +1,839 MW positive bias means traders who submitted unadjusted bids suffered continuous power shortages during delivery.
-
----
-
-## 6. Technology Stack
-
-* **Frontend:** React 19, Vite, Tailwind CSS, Recharts, Lucide React.
-* **Backend:** Python 3.12, FastAPI, Uvicorn, Pandas, NumPy, HTTPX, SQLite.
-* **Testing:** Pytest, HTTPX TestClient.
-* **Containers:** Docker, Docker Compose, Nginx.
-* **Deployment Targets:** Vercel (Frontend), Heroku / Render (Backend).
-
----
-
-## 7. Local Quickstart & Docker
-
-### Option A: Running with Docker Compose (Recommended)
-Clone the repository and run:
 ```bash
-docker compose up --build
+docker compose up -d
 ```
-* **Frontend UI:** Open [http://localhost:3000](http://localhost:3000)
-* **Backend API Docs:** Open [http://localhost:8000/docs](http://localhost:8000/docs)
+* **Trading Desk Web App:** Open [http://localhost:3000](http://localhost:3000)
+* **Backend API Swagger Docs:** Open [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### Option B: Bare-Metal Local Development
-
-#### 1. Start Backend:
+To stop the containers:
 ```bash
+docker compose down
+```
+
+---
+
+### Method 2: Running Locally in VS Code (Terminal)
+
+Open two terminals side-by-side in VS Code:
+
+#### Terminal 1 — Start the Python Backend:
+```bash
+# 1. Navigate to backend
 cd backend
+
+# 2. Create and activate a virtual environment
 python -m venv venv
-# Windows:
+# On Windows:
 .\venv\Scripts\activate
-# Linux/Mac:
+# On Mac/Linux:
 source venv/bin/activate
 
+# 3. Install dependencies
 pip install -r requirements.txt
-python sync_data.py          # Populates January 2026 SQLite database
+
+# 4. Start the server (Port 8000)
 uvicorn app.main:app --reload --port 8000
 ```
 
-#### 2. Start Frontend:
+#### Terminal 2 — Start the React Frontend:
 ```bash
+# 1. Navigate to frontend
 cd frontend
+
+# 2. Install packages
 npm install
+
+# 3. Start development server (Port 3000)
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+Open your browser to: **[http://localhost:3000](http://localhost:3000)**
 
 ---
 
-## 8. Cloud Deployment (Vercel & Heroku)
-
-### Frontend on Vercel
-1. Connect the repository to Vercel and set the Root Directory to `frontend`.
-2. Framework Preset: `Vite`.
-3. Set Environment Variable:
-   * `VITE_API_URL`: URL of your deployed Python backend (e.g. `https://your-windfor-backend.herokuapp.com/api`).
-4. `frontend/vercel.json` ensures client-side routing and rewrites are handled automatically.
-
-### Backend on Heroku
-1. The repository includes `backend/Procfile` and `backend/runtime.txt`.
-2. In Heroku:
-   ```bash
-   heroku create windfor-backend
-   git subtree push --prefix backend heroku main
-   ```
-3. Set config vars if needed: `PORT=8000`.
-
----
-
-## 9. Automated Pytest Suite
-
-Run the automated test suite from the project root:
+### How to Run Automated Tests
+To verify all calculations, data cleaning, and API routes:
 ```bash
-pytest backend/tests
+python -m pytest backend/tests -v
 ```
-**Test Coverage Includes:**
-* `test_data_processor.py`: Filtering `fuelType == "WIND"`, deduplication, timestamp normalization, and 1,488 interval gap verification.
-* `test_forecast_service.py`: Decision-time cut-off calculations ($D-1$ 11:00 UTC vs. rolling hours), forecast selection, and multi-version horizon history.
-* `test_metrics.py`: Mathematical accuracy of MAE, RMSE, Mean Bias, MAPE, and settlement period groupings against ground-truth analytical cases.
-* `test_api.py`: FastAPI endpoints, health check, cutoff presets, and schema compliance.
+**All 13 tests will run and pass**, validating:
+* Data filtering (`fuelType == "WIND"`) and deduplication
+* 100% January 2026 completeness (1,488 half-hour settlement periods, 0 gaps)
+* Decision cutoff filtering ($D-1$ 11:00 UTC vs. rolling hours)
+* Hand-calculated MAE, RMSE, Mean Bias, and MAPE ground-truth cases
+* FastAPI health and presets endpoints
 
 ---
 
-## 10. AI Tools Transparency Declaration
+## 📊 January 2026 Key Empirical Findings
 
-In accordance with project guidelines, AI development tools (specifically **Google Antigravity** powered by **Gemini**) were utilized as an assistive pair-programmer to accelerate:
-* Drafting initial boilerplate code and test scaffolds.
-* Rapidly exploring and verifying live Elexon BMRS endpoint structures.
-* Constructing statistical calculation routines and responsive dashboard UI layouts.
-All domain logic, settlement period alignment, forecast-matching rules, data cleaning, and architectural designs were rigorously verified and validated against live Elexon data.
+Evaluating National Grid ESO / Elexon data for the full month of **January 2026** revealed crucial trading insights:
+
+| Metric | Day-Ahead Decision Forecast ($D-1$ 11:00 UTC) | Latest Real-Time Benchmark | Trader Takeaway & Operational Impact |
+| :--- | :---: | :---: | :--- |
+| **Evaluated Sample** | **744 hourly intervals** | 744 hourly intervals | 100% complete January coverage |
+| **MAE (Mean Absolute Error)** | **2,107.18 MW** | **1,794.22 MW** | Error decreases by **-312.96 MW (-14.8%)** closer to delivery |
+| **RMSE** | **2,611.24 MW** | **2,280.90 MW** | High sensitivity to sudden winter frontal shifts |
+| **Forecast Bias (Mean Error)** | **+1,839.92 MW** | **+1,592.49 MW** | **Critical Alert:** The forecast systematically *over-predicted* wind |
+| **MAPE** | **21.88%** | **16.34%** | Normalized percentage error |
+| **Correlation ($r$)** | **0.9287** | **0.9540** | Strong directional alignment with actuals |
+| **Error Spread ($P_{10}$ to $P_{90}$)** | **-502.7 MW to +4,377 MW** | -289 MW to +3,763 MW | 80% of Day-Ahead intervals carried positive wind shortfall risk |
+
+> **Key Business Discovery for January 2026:**  
+> The national wind forecast exhibited a **massive positive bias (+1,839 MW)**. If a utility bought day-ahead power based solely on the raw forecast without WindProcure's bias quantification, they would have been **systematically short of power across 80% of delivery intervals**, costing millions of pounds in emergency Balancing Mechanism cashout penalties.
+
+---
+
+## 🌐 Deploying to Vercel or Heroku
+
+### Vercel Deployment (Full-Stack Monorepo)
+The root [`vercel.json`](file:///d:/WINDFOR/vercel.json) is configured using **Vercel Services**:
+1. Push this repository to your GitHub account (`https://github.com/Namanag17/kjhw`).
+2. Go to [vercel.com](https://vercel.com) and import the repository.
+3. Vercel automatically deploys:
+   * **`frontend`** service (Vite React app on `/(.*)`)
+   * **`backend`** service (FastAPI on `/api/(.*)`)
+4. Your application will be live instantly!
+
+### Heroku Deployment (Backend)
+The backend includes a [`Procfile`](file:///d:/WINDFOR/backend/Procfile) and [`runtime.txt`](file:///d:/WINDFOR/backend/runtime.txt):
+```bash
+heroku create windfor-backend
+git subtree push --prefix backend heroku main
+```
+
+---
+
+## 🤖 AI Tools Transparency Declaration
+
+In accordance with project guidelines, AI development tools (**Google Antigravity** powered by **Gemini**) were utilized as an assistive pair-programmer to accelerate:
+* Drafting boilerplate code and test scaffolds.
+* Exploring live Elexon BMRS endpoint schemas and stream parameters.
+* Constructing statistical routines and responsive Tailwind UI widgets.
+All domain logic, settlement period alignment, forecast-matching rules, data cleaning, and architectural designs were verified against live Elexon data.
