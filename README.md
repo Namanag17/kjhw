@@ -1,6 +1,6 @@
 # WindProcure UK: Day-Ahead Wind Generation Forecasting & Power Procurement Platform
 
-[![Vercel Deployment](https://img.shields.io/badge/Vercel-Deployed-black?logo=vercel)](https://kjhw.vercel.app)
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Deployed-black?logo=vercel)](https://kjhw-br5e.vercel.app/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?logo=fastapi&logoColor=white)](http://localhost:8000/docs)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](http://localhost:3000)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](#method-1-one-click-docker-recommended)
@@ -10,9 +10,9 @@
 
 ## 🔗 Live Application Links & Repository
 
-* **Live Web Application (Vercel):** [https://kjhw.vercel.app](https://kjhw.vercel.app) *(or your Vercel deployment link)*
+* **Live Web Application (Vercel):** https://kjhw-br5e.vercel.app/ *(or your Vercel deployment link)*
 * **GitHub Repository:** [https://github.com/Namanag17/kjhw](https://github.com/Namanag17/kjhw)
-* **Backend API Documentation (Interactive Swagger):** `http://localhost:8000/docs` or `https://kjhw.vercel.app/api/docs`
+* **Backend API Documentation (Interactive Swagger):** `http://localhost:8000/docs` or `https://kjhw-br5e.vercel.app/api/docs`
 
 ---
 

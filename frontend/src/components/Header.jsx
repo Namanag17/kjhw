@@ -15,10 +15,10 @@ export default function Header({ validationData, onOpenAudit, onOpenDocs }) {
               <h1 className="text-xl font-bold tracking-tight text-white">
                 WindProcure UK <span className="text-cyan-400 text-sm font-semibold ml-1.5 px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-800">Day-Ahead Desk</span>
               </h1>
-              <span className="text-xs text-slate-400 border-l border-slate-700 pl-2">Jan 2026 Procurement</span>
+              <span className="text-xs text-slate-400 border-l border-slate-700 pl-2"> 2026 Procurement</span>
             </div>
             <p className="text-xs text-slate-400">
-              National Grid ESO / Elexon BMRS Stream Integration • FUELHH (WIND) vs WINDFOR
+              National Grid ESO / Elexon BMRS Stream Integration 
             </p>
           </div>
         </div>
